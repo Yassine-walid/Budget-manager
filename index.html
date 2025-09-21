@@ -103,99 +103,115 @@
   </div>
 
   <script>
-    // ====== CONFIG: Replace these ======
-    const SUPABASE_URL = "postgresql://postgres:123***Sss@db.ehewggsyhqmrbmdsqvfk.supabase.co:5432/postgres";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZXdnZ3N5aHFtcmJtZHNxdmZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg0MTM2OTAsImV4cCI6MjA3Mzk4OTY5MH0.Gv48GuHgN1Ry_nCXbGR_KQKx0YN-q1yXpCrlStm6yYo";
+  // ✅ Use your Azure backend URL
+  const API_URL = "https://buget-manager.azurewebsites.net/api";
 
-    let sb;
-    document.addEventListener('DOMContentLoaded', async () => {
-      sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  document.addEventListener("DOMContentLoaded", async () => {
+    await refreshSavings();
+    await loadSummary();
+
+    document.getElementById("refreshBtn").addEventListener("click", refreshSavings);
+    document.getElementById("loadSummary").addEventListener("click", loadSummary);
+
+    document.getElementById("incomeForm").addEventListener("submit", handleAddIncome);
+    document.getElementById("expenseForm").addEventListener("submit", handleAddExpense);
+  });
+
+  // ---- Load savings ----
+  async function refreshSavings() {
+    try {
+      const res = await fetch(`${API_URL}/savings`);
+      const data = await res.json();
+      document.getElementById("balance").textContent =
+        new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(
+          data.balance ?? 0
+        );
+      document.getElementById("lastUpdate").textContent =
+        "Updated: " + new Date(data.last_Update).toLocaleString();
+    } catch (err) {
+      console.error("Error loading savings", err);
+    }
+  }
+
+  // ---- Add income ----
+  async function handleAddIncome(e) {
+    e.preventDefault();
+    const f = e.currentTarget;
+    const payload = {
+      source: f.source.value,
+      amount: parseFloat(f.amount.value),
+      at: f.at.value || new Date().toISOString(),
+    };
+
+    try {
+      await fetch(`${API_URL}/income`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      f.reset();
       await refreshSavings();
       await loadSummary();
-
-      document.getElementById('refreshBtn').addEventListener('click', refreshSavings);
-      document.getElementById('loadSummary').addEventListener('click', loadSummary);
-
-      document.getElementById('incomeForm').addEventListener('submit', handleAddIncome);
-      document.getElementById('expenseForm').addEventListener('submit', handleAddExpense);
-    });
-
-    async function refreshSavings() {
-      const { data, error } = await sb.from('savings').select('*').order('id', { ascending: false }).limit(1).maybeSingle();
-      if (error) { console.error(error); return; }
-      const balanceEl = document.getElementById('balance');
-      const luEl = document.getElementById('lastUpdate');
-      if (data) {
-        balanceEl.textContent = new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(data.balance ?? 0);
-        luEl.textContent = 'Updated: ' + new Date(data.last_update).toLocaleString();
-      } else {
-        balanceEl.textContent = '0';
-        luEl.textContent = '';
-      }
+    } catch (err) {
+      console.error("Error adding income", err);
     }
+  }
 
-    async function handleAddIncome(e) {
-      e.preventDefault();
-      const f = e.currentTarget;
-      const payload = {
-        source: f.source.value || null,
-        amount: Number(f.amount.value),
-        at: f.at.value || null
-      };
-      const { error } = await sb.from('income').insert(payload);
-      const msg = document.getElementById('incomeMsg');
-      if (error) {
-        console.error(error);
-        msg.textContent = 'Error adding income.';
-      } else {
-        msg.textContent = 'Income added ✓';
-        f.reset();
-        await refreshSavings();
-        await loadSummary();
-      }
+  // ---- Add expense ----
+  async function handleAddExpense(e) {
+    e.preventDefault();
+    const f = e.currentTarget;
+    const payload = {
+      type: f.type.value,
+      who: f.who.value,
+      category: f.category.value,
+      amount: parseFloat(f.amount.value),
+      at: f.at.value || new Date().toISOString(),
+    };
+
+    try {
+      await fetch(`${API_URL}/expenses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      f.reset();
+      await refreshSavings();
+      await loadSummary();
+    } catch (err) {
+      console.error("Error adding expense", err);
     }
+  }
 
-    async function handleAddExpense(e) {
-      e.preventDefault();
-      const f = e.currentTarget;
-      const payload = {
-        type: f.type.value || null,
-        who: f.who.value || null,
-        category: f.category.value || 'Essential',
-        amount: Number(f.amount.value),
-        at: f.at.value || null
-      };
-      const { error } = await sb.from('expenses').insert(payload);
-      const msg = document.getElementById('expenseMsg');
-      if (error) {
-        console.error(error);
-        msg.textContent = 'Error adding expense.';
-      } else {
-        msg.textContent = 'Expense added ✓';
-        f.reset();
-        await refreshSavings();
-        await loadSummary();
-      }
-    }
+  // ---- Load monthly summary ----
+  async function loadSummary() {
+    try {
+      const res = await fetch(`${API_URL}/monthlysummary`);
+      const data = await res.json();
+      const tbody = document.getElementById("summaryBody");
+      tbody.innerHTML = "";
 
-    async function loadSummary() {
-      const { data, error } = await sb.from('monthly_summary').select('*').order('ym', { ascending: true });
-      if (error) { console.error(error); return; }
-      const tbody = document.getElementById('summaryBody');
-      tbody.innerHTML = '';
-      (data || []).forEach(row => {
-        const tr = document.createElement('tr');
-        tr.className = 'border-b';
-        const cur = (v) => new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(v ?? 0);
+      data.forEach((row) => {
+        const tr = document.createElement("tr");
+        tr.className = "border-b";
+        const cur = (v) =>
+          new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(v ?? 0);
+
         tr.innerHTML = `
-          <td class="py-2 pr-4">${row.ym}</td>
-          <td class="py-2 pr-4">${cur(row.total_income)}</td>
-          <td class="py-2 pr-4">${cur(row.total_expenses)}</td>
-          <td class="py-2 pr-4 ${((row.net_change||0) >= 0) ? 'text-emerald-700' : 'text-rose-700'}">${cur(row.net_change)}</td>
+          <td class="py-2 pr-4">${row.year}-${String(row.month).padStart(2, "0")}</td>
+          <td class="py-2 pr-4">${cur(row.totalIncome)}</td>
+          <td class="py-2 pr-4">${cur(row.totalExpenses)}</td>
+          <td class="py-2 pr-4 ${
+            (row.netChange ?? 0) >= 0 ? "text-emerald-700" : "text-rose-700"
+          }">${cur(row.netChange)}</td>
         `;
         tbody.appendChild(tr);
       });
+    } catch (err) {
+      console.error("Error loading summary", err);
     }
-  </script>
+  }
+</script>
+
 </body>
 </html>
