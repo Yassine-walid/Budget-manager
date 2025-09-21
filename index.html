@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>My Money Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS -->
+  <script defer src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <div class="max-w-4xl mx-auto p-6">
+    <header class="mb-6">
+      <h1 class="text-3xl font-bold">💸 My Money Tracker</h1>
+      <p class="text-sm text-gray-600">Track income, expenses, live savings, and monthly trends.</p>
+    </header>
+
+    <!-- Savings Card -->
+    <section class="mb-6">
+      <div class="rounded-2xl shadow bg-white p-5 flex items-center justify-between">
+        <div>
+          <div class="text-sm text-gray-500">Current Savings</div>
+          <div id="balance" class="text-3xl font-semibold">—</div>
+          <div id="lastUpdate" class="text-xs text-gray-500"></div>
+        </div>
+        <button id="refreshBtn" class="px-4 py-2 rounded-xl bg-gray-900 text-white hover:bg-black">Refresh</button>
+      </div>
+    </section>
+
+    <!-- Forms -->
+    <div class="grid md:grid-cols-2 gap-6 mb-8">
+      <!-- Add Income -->
+      <form id="incomeForm" class="rounded-2xl shadow bg-white p-5 space-y-3">
+        <h2 class="text-xl font-semibold">Add Income</h2>
+        <div>
+          <label class="block text-sm mb-1">Source</label>
+          <input name="source" class="w-full border rounded-lg px-3 py-2" placeholder="Salary, Freelance..." />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Amount</label>
+          <input name="amount" type="number" step="0.01" class="w-full border rounded-lg px-3 py-2" required />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Date</label>
+          <input name="at" type="date" class="w-full border rounded-lg px-3 py-2" />
+        </div>
+        <button class="px-4 py-2 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">Add Income</button>
+        <div id="incomeMsg" class="text-sm text-gray-600"></div>
+      </form>
+
+      <!-- Add Expense -->
+      <form id="expenseForm" class="rounded-2xl shadow bg-white p-5 space-y-3">
+        <h2 class="text-xl font-semibold">Add Expense</h2>
+        <div>
+          <label class="block text-sm mb-1">Type</label>
+          <input name="type" class="w-full border rounded-lg px-3 py-2" placeholder="Food, Rent, Travel..." />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Who</label>
+          <input name="who" class="w-full border rounded-lg px-3 py-2" placeholder="Self, Family..." />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Category</label>
+          <select name="category" class="w-full border rounded-lg px-3 py-2">
+            <option>Essential</option>
+            <option>Luxury</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Amount</label>
+          <input name="amount" type="number" step="0.01" class="w-full border rounded-lg px-3 py-2" required />
+        </div>
+        <div>
+          <label class="block text-sm mb-1">Date</label>
+          <input name="at" type="date" class="w-full border rounded-lg px-3 py-2" />
+        </div>
+        <button class="px-4 py-2 rounded-xl bg-rose-600 text-white hover:bg-rose-700">Add Expense</button>
+        <div id="expenseMsg" class="text-sm text-gray-600"></div>
+      </form>
+    </div>
+
+    <!-- Monthly Summary -->
+    <section class="rounded-2xl shadow bg-white p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-xl font-semibold">Monthly Summary</h2>
+        <button id="loadSummary" class="px-3 py-2 rounded-lg border">Reload</button>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-left border-b">
+              <th class="py-2 pr-4">Month</th>
+              <th class="py-2 pr-4">Income</th>
+              <th class="py-2 pr-4">Expenses</th>
+              <th class="py-2 pr-4">Net</th>
+            </tr>
+          </thead>
+          <tbody id="summaryBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // ====== CONFIG: Replace these ======
+    const SUPABASE_URL = "postgresql://postgres:123***Sss@db.ehewggsyhqmrbmdsqvfk.supabase.co:5432/postgres";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVoZXdnZ3N5aHFtcmJtZHNxdmZrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg0MTM2OTAsImV4cCI6MjA3Mzk4OTY5MH0.Gv48GuHgN1Ry_nCXbGR_KQKx0YN-q1yXpCrlStm6yYo";
+
+    let sb;
+    document.addEventListener('DOMContentLoaded', async () => {
+      sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      await refreshSavings();
+      await loadSummary();
+
+      document.getElementById('refreshBtn').addEventListener('click', refreshSavings);
+      document.getElementById('loadSummary').addEventListener('click', loadSummary);
+
+      document.getElementById('incomeForm').addEventListener('submit', handleAddIncome);
+      document.getElementById('expenseForm').addEventListener('submit', handleAddExpense);
+    });
+
+    async function refreshSavings() {
+      const { data, error } = await sb.from('savings').select('*').order('id', { ascending: false }).limit(1).maybeSingle();
+      if (error) { console.error(error); return; }
+      const balanceEl = document.getElementById('balance');
+      const luEl = document.getElementById('lastUpdate');
+      if (data) {
+        balanceEl.textContent = new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(data.balance ?? 0);
+        luEl.textContent = 'Updated: ' + new Date(data.last_update).toLocaleString();
+      } else {
+        balanceEl.textContent = '0';
+        luEl.textContent = '';
+      }
+    }
+
+    async function handleAddIncome(e) {
+      e.preventDefault();
+      const f = e.currentTarget;
+      const payload = {
+        source: f.source.value || null,
+        amount: Number(f.amount.value),
+        at: f.at.value || null
+      };
+      const { error } = await sb.from('income').insert(payload);
+      const msg = document.getElementById('incomeMsg');
+      if (error) {
+        console.error(error);
+        msg.textContent = 'Error adding income.';
+      } else {
+        msg.textContent = 'Income added ✓';
+        f.reset();
+        await refreshSavings();
+        await loadSummary();
+      }
+    }
+
+    async function handleAddExpense(e) {
+      e.preventDefault();
+      const f = e.currentTarget;
+      const payload = {
+        type: f.type.value || null,
+        who: f.who.value || null,
+        category: f.category.value || 'Essential',
+        amount: Number(f.amount.value),
+        at: f.at.value || null
+      };
+      const { error } = await sb.from('expenses').insert(payload);
+      const msg = document.getElementById('expenseMsg');
+      if (error) {
+        console.error(error);
+        msg.textContent = 'Error adding expense.';
+      } else {
+        msg.textContent = 'Expense added ✓';
+        f.reset();
+        await refreshSavings();
+        await loadSummary();
+      }
+    }
+
+    async function loadSummary() {
+      const { data, error } = await sb.from('monthly_summary').select('*').order('ym', { ascending: true });
+      if (error) { console.error(error); return; }
+      const tbody = document.getElementById('summaryBody');
+      tbody.innerHTML = '';
+      (data || []).forEach(row => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b';
+        const cur = (v) => new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(v ?? 0);
+        tr.innerHTML = `
+          <td class="py-2 pr-4">${row.ym}</td>
+          <td class="py-2 pr-4">${cur(row.total_income)}</td>
+          <td class="py-2 pr-4">${cur(row.total_expenses)}</td>
+          <td class="py-2 pr-4 ${((row.net_change||0) >= 0) ? 'text-emerald-700' : 'text-rose-700'}">${cur(row.net_change)}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+  </script>
+</body>
+</html>
