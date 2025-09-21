@@ -123,7 +123,7 @@
       const res = await fetch(`${API_URL}/savings`);
       const data = await res.json();
       document.getElementById("balance").textContent =
-        new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(
+        new Intl.NumberFormat(undefined, { style: "currency", currency: "MAD" }).format(
           data.balance ?? 0
         );
       document.getElementById("lastUpdate").textContent =
@@ -195,7 +195,7 @@
         const tr = document.createElement("tr");
         tr.className = "border-b";
         const cur = (v) =>
-          new Intl.NumberFormat(undefined, { style: "currency", currency: "USD" }).format(v ?? 0);
+          new Intl.NumberFormat(undefined, { style: "currency", currency: "MAD" }).format(v ?? 0);
 
         tr.innerHTML = `
           <td class="py-2 pr-4">${row.year}-${String(row.month).padStart(2, "0")}</td>
