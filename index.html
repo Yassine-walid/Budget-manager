@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <title>💸 My Money Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Tailwind (CDN)d -->
+  <!-- Tailwind (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -71,14 +71,20 @@
 
     <!-- Charts -->
     <section class="bg-white p-5 rounded-xl shadow space-y-6">
-      <h2 class="text-xl font-semibold">Analytics</h2>
+      <div class="flex items-center justify-between">
+        <h2 class="text-xl font-semibold">Analytics</h2>
+        <!-- 🔎 Month Filter -->
+        <select id="monthFilter" class="border rounded px-2 py-1 text-sm">
+          <option value="">All months</option>
+        </select>
+      </div>
       <canvas id="summaryChart" height="120"></canvas>
       <canvas id="expensesChart" height="120"></canvas>
     </section>
   </div>
 
   <script>
-    // ✅ Backend API (بدّل إذا عندك سيرفر خاص)
+    // ✅ Backend API
     const API = "https://buget-manager.azurewebsites.net/api";
     // const API = "http://localhost:5000/api"; // محلياً
 
@@ -145,47 +151,98 @@
         const res = await fetch(`${API}/monthlysummary`);
         const data = await res.json();
 
-        // Prepare data
-        const labels = data.map(r => `${r.year}-${String(r.month).padStart(2,"0")}`);
-        const income = data.map(r => r.totalIncome);
-        const expenses = data.map(r => r.totalExpenses);
-
-        // Chart 1: Monthly Summary
-        if (window.summaryChart && typeof window.summaryChart.destroy === "function") {
-          window.summaryChart.destroy();
-        }
-        window.summaryChart = new Chart(document.getElementById("summaryChart"), {
-          type: "line",
-          data: {
-            labels,
-            datasets: [
-              { label: "Income", data: income, borderColor: "green", fill: false },
-              { label: "Expenses", data: expenses, borderColor: "red", fill: false }
-            ]
-          }
+        // Fill month filter
+        const monthFilter = document.getElementById("monthFilter");
+        monthFilter.innerHTML = '<option value="">All months</option>';
+        data.forEach(r => {
+          const monthVal = `${r.year}-${String(r.month).padStart(2,"0")}`;
+          const opt = document.createElement("option");
+          opt.value = monthVal;
+          opt.textContent = monthVal;
+          monthFilter.appendChild(opt);
         });
 
-        // Chart 2: Expenses Distribution
-        const res2 = await fetch(`${API}/expenses`);
-        const allExpenses = await res2.json();
-        const groups = {};
-        allExpenses.forEach(e => {
-          groups[e.category] = (groups[e.category] || 0) + e.amount;
-        });
-        if (window.expensesChart && typeof window.expensesChart.destroy === "function") {
-          window.expensesChart.destroy();
-        }
-        window.expensesChart = new Chart(document.getElementById("expensesChart"), {
-          type: "doughnut",
-          data: {
-            labels: Object.keys(groups),
-            datasets: [{ data: Object.values(groups), backgroundColor: ["#f87171","#60a5fa","#34d399","#fbbf24","#a78bfa","#f472b6"] }]
-          }
-        });
+        monthFilter.onchange = () => drawCharts(data);
 
+        // Draw charts initially
+        drawCharts(data);
       } catch (err) {
         console.error("Error summary:", err);
       }
+    }
+
+    function drawCharts(data) {
+      const selected = document.getElementById("monthFilter").value;
+
+      // Filter data
+      let filtered = data;
+      if (selected) {
+        filtered = data.filter(r => `${r.year}-${String(r.month).padStart(2,"0")}` === selected);
+      }
+
+      // Chart 1: Income vs Expenses by Month
+      const labels = filtered.map(r => `${r.year}-${String(r.month).padStart(2,"0")}`);
+      const income = filtered.map(r => r.totalIncome);
+      const expenses = filtered.map(r => r.totalExpenses);
+
+      if (window.summaryChart && typeof window.summaryChart.destroy === "function") {
+        window.summaryChart.destroy();
+      }
+      window.summaryChart = new Chart(document.getElementById("summaryChart"), {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            { label: "Income", data: income, backgroundColor: "#34d399" },
+            { label: "Expenses", data: expenses, backgroundColor: "#f87171" }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: selected ? `Income vs Expenses (${selected})` : "Income vs Expenses (All months)"
+            }
+          }
+        }
+      });
+
+      // Chart 2: Expenses Distribution
+      fetch(`${API}/expenses`)
+        .then(res => res.json())
+        .then(allExpenses => {
+          let filteredExpenses = allExpenses;
+          if (selected) {
+            filteredExpenses = allExpenses.filter(e =>
+              `${new Date(e.at).getFullYear()}-${String(new Date(e.at).getMonth()+1).padStart(2,"0")}` === selected
+            );
+          }
+          const groups = {};
+          filteredExpenses.forEach(e => {
+            groups[e.category] = (groups[e.category] || 0) + e.amount;
+          });
+
+          if (window.expensesChart && typeof window.expensesChart.destroy === "function") {
+            window.expensesChart.destroy();
+          }
+          window.expensesChart = new Chart(document.getElementById("expensesChart"), {
+            type: "doughnut",
+            data: {
+              labels: Object.keys(groups),
+              datasets: [{ data: Object.values(groups),
+                backgroundColor: ["#f87171","#60a5fa","#34d399","#fbbf24","#a78bfa","#f472b6"] }]
+            },
+            options: {
+              plugins: {
+                title: {
+                  display: true,
+                  text: selected ? `Expenses Distribution (${selected})` : "Expenses Distribution (All months)"
+                }
+              }
+            }
+          });
+        });
     }
   </script>
 </body>
