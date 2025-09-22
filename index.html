@@ -1,249 +1,362 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-  <meta charset="utf-8" />
-  <title>💸 My Money Tracker</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Tailwind (CDN) -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="utf-8" />
+    <title>💸 My Money Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- Tailwind (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
+
 <body class="bg-gray-100 text-gray-900">
-  <div class="max-w-4xl mx-auto p-4 space-y-6">
+    <div class="max-w-4xl mx-auto p-4 space-y-6">
 
-    <!-- Header -->
-    <header class="text-center">
-      <h1 class="text-3xl font-bold">💸 My Money Tracker</h1>
-      <p class="text-gray-600 text-sm">Track savings, income, expenses & analytics</p>
-    </header>
+        <!-- Header -->
+        <header class="text-center">
+            <h1 class="text-3xl font-bold">💸 My Money Tracker</h1>
+            <p class="text-gray-600 text-sm">Track savings, income, expenses & analytics</p>
+        </header>
 
-    <!-- Savings Card -->
-    <section class="bg-white shadow rounded-xl p-5 flex justify-between items-center">
-      <div>
-        <div class="text-sm text-gray-500">Current Savings</div>
-        <div id="balance" class="text-3xl font-bold">—</div>
-        <div id="lastUpdate" class="text-xs text-gray-500"></div>
-      </div>
-      <button id="refreshBtn"
-        class="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
-        Refresh
-      </button>
-    </section>
+        <!-- Savings + Balance + Categories -->
+        <section class="bg-white shadow rounded-xl p-5 space-y-6">
+            <!-- Balance & Savings cards inline -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Current Balance -->
+                <div class="bg-gray-50 rounded-lg p-4 shadow text-center">
+                    <div class="text-sm text-gray-500">Current Balance</div>
+                    <div id="balance" class="text-2xl font-bold">—</div>
+                    <div id="lastUpdate" class="text-xs text-gray-500"></div>
+                </div>
 
-    <!-- Forms -->
-    <div class="grid md:grid-cols-2 gap-6">
-      <!-- Add Income -->
-      <form id="incomeForm" class="bg-white p-5 rounded-xl shadow space-y-3">
-        <h2 class="text-xl font-semibold">Add Income</h2>
-        <input name="source" placeholder="Salary, Freelance..."
-          class="w-full border rounded px-3 py-2" />
-        <input name="amount" type="number" step="0.01" placeholder="Amount"
-          class="w-full border rounded px-3 py-2" required />
-        <input name="at" type="date" class="w-full border rounded px-3 py-2" />
-        <button
-          class="w-full py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
-          Add Income
-        </button>
-      </form>
+                <!-- Total Savings -->
+                <div class="bg-gray-50 rounded-lg p-4 shadow text-center">
+                    <div class="text-sm text-gray-500">Total Savings</div>
+                    <div id="totalSavings" class="text-2xl font-bold text-emerald-600">—</div>
+                </div>
+            </div>
 
-      <!-- Add Expense -->
-      <form id="expenseForm" class="bg-white p-5 rounded-xl shadow space-y-3">
-        <h2 class="text-xl font-semibold">Add Expense</h2>
-        <input name="type" placeholder="Food, Rent, Coffee..."
-          class="w-full border rounded px-3 py-2" />
-        <input name="who" placeholder="Self, Family..."
-          class="w-full border rounded px-3 py-2" />
-        <select name="category" class="w-full border rounded px-3 py-2">
-          <option>Essential</option>
-          <option>Luxury</option>
-          <option>Loans</option>
-        </select>
-        <input name="amount" type="number" step="0.01" placeholder="Amount"
-          class="w-full border rounded px-3 py-2" required />
-        <input name="at" type="date" class="w-full border rounded px-3 py-2" />
-        <button
-          class="w-full py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700">
-          Add Expense
-        </button>
-      </form>
+            <!-- Total Expenses by Category -->
+            <div>
+                <h3 class="text-sm text-gray-500 mb-2">Expenses by Category</h3>
+                <div id="categoryTotals" class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm"></div>
+            </div>
+
+            <!-- Refresh button -->
+            <div>
+                <button id="refreshBtn"
+                    class="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
+                    Refresh
+                </button>
+            </div>
+        </section>
+
+        <!-- Forms -->
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Add Income -->
+            <form id="incomeForm" class="bg-white p-5 rounded-xl shadow space-y-3">
+                <h2 class="text-xl font-semibold">Add Income</h2>
+                <input name="source" placeholder="Salary, Freelance..." class="w-full border rounded px-3 py-2" />
+                <input name="amount" type="number" step="0.01" placeholder="Amount"
+                    class="w-full border rounded px-3 py-2" required />
+                <input name="at" type="date" class="w-full border rounded px-3 py-2" />
+                <button class="w-full py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
+                    Add Income
+                </button>
+            </form>
+
+            <!-- Savings Actions -->
+            <div class="bg-white p-5 rounded-xl shadow space-y-6">
+                <h2 class="text-xl font-semibold">Manage Savings</h2>
+
+                <!-- Add to Savings -->
+                <form id="addSavingsForm" class="space-y-3">
+                    <input name="amount" type="number" step="0.01" placeholder="Amount to Add"
+                        class="w-full border rounded px-3 py-2" required />
+                    <button class="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                        Add to Savings
+                    </button>
+                    <div id="addSavingsMsg" class="text-sm text-gray-600"></div>
+                </form>
+
+                <!-- Remove from Savings -->
+                <form id="removeSavingsForm" class="space-y-3">
+                    <input name="amount" type="number" step="0.01" placeholder="Amount to Remove"
+                        class="w-full border rounded px-3 py-2" required />
+                    <button class="w-full py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700">
+                        Remove from Savings
+                    </button>
+                    <div id="removeSavingsMsg" class="text-sm text-gray-600"></div>
+                </form>
+            </div>
+
+            <!-- Add Expense -->
+            <form id="expenseForm" class="bg-white p-5 rounded-xl shadow space-y-3">
+                <h2 class="text-xl font-semibold">Add Expense</h2>
+                <input name="type" placeholder="Food, Rent, Coffee..." class="w-full border rounded px-3 py-2" />
+                <input name="who" placeholder="Self, Family..." class="w-full border rounded px-3 py-2" />
+                <select name="category" class="w-full border rounded px-3 py-2">
+                    <option>Essential</option>
+                    <option>Luxury</option>
+                    <option>Loans</option>
+                </select>
+                <input name="amount" type="number" step="0.01" placeholder="Amount"
+                    class="w-full border rounded px-3 py-2" required />
+                <input name="at" type="date" class="w-full border rounded px-3 py-2" />
+                <button class="w-full py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700">
+                    Add Expense
+                </button>
+            </form>
+        </div>
+
+        <!-- Charts -->
+        <section class="bg-white p-5 rounded-xl shadow space-y-6">
+            <h2 class="text-xl font-semibold">Analytics</h2>
+            <canvas id="summaryChart" height="120"></canvas>
+            <canvas id="expensesChart" height="120"></canvas>
+        </section>
+
+        <!-- Expenses Table -->
+        <section class="bg-white p-5 rounded-xl shadow space-y-4">
+            <div class="flex justify-between items-center">
+                <h2 class="text-xl font-semibold">Expenses History</h2>
+                <select id="categoryFilter" class="border rounded px-2 py-1 text-sm">
+                    <option value="">All Categories</option>
+                    <option value="Essential">Essential</option>
+                    <option value="Luxury">Luxury</option>
+                    <option value="Loans">Loans</option>
+                </select>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm text-left border">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-2 border">Date</th>
+                            <th class="px-4 py-2 border">Type</th>
+                            <th class="px-4 py-2 border">Who</th>
+                            <th class="px-4 py-2 border">Category</th>
+                            <th class="px-4 py-2 border">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody id="expensesTableBody"></tbody>
+                </table>
+            </div>
+        </section>
+
     </div>
 
-    <!-- Charts -->
-    <section class="bg-white p-5 rounded-xl shadow space-y-6">
-      <div class="flex items-center justify-between">
-        <h2 class="text-xl font-semibold">Analytics</h2>
-        <!-- 🔎 Month Filter -->
-        <select id="monthFilter" class="border rounded px-2 py-1 text-sm">
-          <option value="">All months</option>
-        </select>
-      </div>
-      <canvas id="summaryChart" height="120"></canvas>
-      <canvas id="expensesChart" height="120"></canvas>
-    </section>
-  </div>
+    <script>
+        const API = "https://buget-manager.azurewebsites.net/api";
 
-  <script>
-    // ✅ Backend API
-    const API = "https://buget-manager.azurewebsites.net/api";
-    // const API = "http://localhost:5000/api"; // محلياً
+        document.addEventListener("DOMContentLoaded", () => {
+            refreshData();
+            loadSummary();
+            loadExpensesTable();
 
-    document.addEventListener("DOMContentLoaded", () => {
-      refreshSavings();
-      loadSummary();
-
-      document.getElementById("refreshBtn").addEventListener("click", refreshSavings);
-      document.getElementById("incomeForm").addEventListener("submit", addIncome);
-      document.getElementById("expenseForm").addEventListener("submit", addExpense);
-    });
-
-    async function refreshSavings() {
-      try {
-        const res = await fetch(`${API}/savings`);
-        const data = await res.json();
-        document.getElementById("balance").textContent =
-          new Intl.NumberFormat(undefined, { style: "currency", currency: "MAD" }).format(data.balance ?? 0);
-        document.getElementById("lastUpdate").textContent =
-          "Updated: " + new Date(data.last_Update).toLocaleString();
-      } catch (err) {
-        console.error("Error savings:", err);
-      }
-    }
-
-    async function addIncome(e) {
-      e.preventDefault();
-      const f = e.currentTarget;
-      const payload = {
-        source: f.source.value,
-        amount: parseFloat(f.amount.value),
-        at: f.at.value || new Date().toISOString(),
-      };
-      await fetch(`${API}/income`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      f.reset();
-      refreshSavings(); loadSummary();
-    }
-
-    async function addExpense(e) {
-      e.preventDefault();
-      const f = e.currentTarget;
-      const payload = {
-        type: f.type.value,
-        who: f.who.value,
-        category: f.category.value,
-        amount: parseFloat(f.amount.value),
-        at: f.at.value || new Date().toISOString(),
-      };
-      await fetch(`${API}/expenses`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-      f.reset();
-      refreshSavings(); loadSummary();
-    }
-
-    async function loadSummary() {
-      try {
-        const res = await fetch(`${API}/monthlysummary`);
-        const data = await res.json();
-
-        // Fill month filter
-        const monthFilter = document.getElementById("monthFilter");
-        monthFilter.innerHTML = '<option value="">All months</option>';
-        data.forEach(r => {
-          const monthVal = `${r.year}-${String(r.month).padStart(2,"0")}`;
-          const opt = document.createElement("option");
-          opt.value = monthVal;
-          opt.textContent = monthVal;
-          monthFilter.appendChild(opt);
+            document.getElementById("refreshBtn").addEventListener("click", refreshData);
+            document.getElementById("incomeForm").addEventListener("submit", addIncome);
+            document.getElementById("expenseForm").addEventListener("submit", addExpense);
+            document.getElementById("addSavingsForm").addEventListener("submit", addToSavings);
+            document.getElementById("removeSavingsForm").addEventListener("submit", removeFromSavings);
+            document.getElementById("categoryFilter").addEventListener("change", loadExpensesTable);
         });
 
-        monthFilter.onchange = () => drawCharts(data);
+        async function refreshData() {
+            try {
+                // Balance & Savings
+                const res = await fetch(`${API}/savingsTotal`);
+                const data = await res.json();
+                document.getElementById("balance").textContent =
+                    new Intl.NumberFormat(undefined, { style: "currency", currency: "MAD" }).format(data.balance ?? 0);
+                document.getElementById("totalSavings").textContent =
+                    new Intl.NumberFormat(undefined, { style: "currency", currency: "MAD" }).format(data.savings ?? 0);
+                document.getElementById("lastUpdate").textContent =
+                    "Updated: " + new Date(data.last_Update).toLocaleString();
 
-        // Draw charts initially
-        drawCharts(data);
-      } catch (err) {
-        console.error("Error summary:", err);
-      }
-    }
+                // Expenses by category
+                const res2 = await fetch(`${API}/expenses`);
+                const expenses = await res2.json();
+                const groups = {};
+                expenses.forEach(e => {
+                    groups[e.category] = (groups[e.category] || 0) + e.amount;
+                });
 
-    function drawCharts(data) {
-      const selected = document.getElementById("monthFilter").value;
+                const container = document.getElementById("categoryTotals");
+                container.innerHTML = "";
+                Object.entries(groups).forEach(([cat, total]) => {
+                    const div = document.createElement("div");
+                    div.className = "bg-gray-50 rounded-lg p-3 shadow text-center";
+                    div.innerHTML = `
+            <div class="font-semibold">${cat}</div>
+            <div class="text-rose-600 font-bold">
+              ${new Intl.NumberFormat(undefined, { style: "currency", currency: "MAD" }).format(total)}
+            </div>
+          `;
+                    container.appendChild(div);
+                });
 
-      // Filter data
-      let filtered = data;
-      if (selected) {
-        filtered = data.filter(r => `${r.year}-${String(r.month).padStart(2,"0")}` === selected);
-      }
-
-      // Chart 1: Income vs Expenses by Month
-      const labels = filtered.map(r => `${r.year}-${String(r.month).padStart(2,"0")}`);
-      const income = filtered.map(r => r.totalIncome);
-      const expenses = filtered.map(r => r.totalExpenses);
-
-      if (window.summaryChart && typeof window.summaryChart.destroy === "function") {
-        window.summaryChart.destroy();
-      }
-      window.summaryChart = new Chart(document.getElementById("summaryChart"), {
-        type: "bar",
-        data: {
-          labels,
-          datasets: [
-            { label: "Income", data: income, backgroundColor: "#34d399" },
-            { label: "Expenses", data: expenses, backgroundColor: "#f87171" }
-          ]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            title: {
-              display: true,
-              text: selected ? `Income vs Expenses (${selected})` : "Income vs Expenses (All months)"
+            } catch (err) {
+                console.error("Error loading data:", err);
             }
-          }
         }
-      });
 
-      // Chart 2: Expenses Distribution
-      fetch(`${API}/expenses`)
-        .then(res => res.json())
-        .then(allExpenses => {
-          let filteredExpenses = allExpenses;
-          if (selected) {
-            filteredExpenses = allExpenses.filter(e =>
-              `${new Date(e.at).getFullYear()}-${String(new Date(e.at).getMonth()+1).padStart(2,"0")}` === selected
-            );
-          }
-          const groups = {};
-          filteredExpenses.forEach(e => {
-            groups[e.category] = (groups[e.category] || 0) + e.amount;
-          });
+        async function addIncome(e) {
+            e.preventDefault();
+            const f = e.currentTarget;
+            const payload = {
+                source: f.source.value,
+                amount: parseFloat(f.amount.value),
+                at: f.at.value || new Date().toISOString(),
+            };
+            await fetch(`${API}/income`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            f.reset();
+            refreshData(); loadSummary();
+        }
 
-          if (window.expensesChart && typeof window.expensesChart.destroy === "function") {
-            window.expensesChart.destroy();
-          }
-          window.expensesChart = new Chart(document.getElementById("expensesChart"), {
-            type: "doughnut",
-            data: {
-              labels: Object.keys(groups),
-              datasets: [{ data: Object.values(groups),
-                backgroundColor: ["#f87171","#60a5fa","#34d399","#fbbf24","#a78bfa","#f472b6"] }]
-            },
-            options: {
-              plugins: {
-                title: {
-                  display: true,
-                  text: selected ? `Expenses Distribution (${selected})` : "Expenses Distribution (All months)"
+        async function addExpense(e) {
+            e.preventDefault();
+            const f = e.currentTarget;
+            const payload = {
+                type: f.type.value,
+                who: f.who.value,
+                category: f.category.value,
+                amount: parseFloat(f.amount.value),
+                at: f.at.value || new Date().toISOString(),
+            };
+            await fetch(`${API}/expenses`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            f.reset();
+            refreshData(); loadSummary();
+        }
+
+        async function addToSavings(e) {
+            e.preventDefault();
+            const f = e.currentTarget;
+            const amount = parseFloat(f.amount.value);
+
+            try {
+                const res = await fetch(`${API}/savings/add?amount=${amount}`, { method: "POST" });
+                const data = await res.json();
+                if (!res.ok) {
+                    document.getElementById("addSavingsMsg").textContent = data.message || "Error adding";
+                    return;
                 }
-              }
+                document.getElementById("addSavingsMsg").textContent = "✅ Added to savings!";
+                f.reset();
+                await refreshData();
+            } catch (err) {
+                console.error("Error add:", err);
             }
-          });
-        });
-    }
-  </script>
+        }
+
+        async function removeFromSavings(e) {
+            e.preventDefault();
+            const f = e.currentTarget;
+            const amount = parseFloat(f.amount.value);
+
+            try {
+                const res = await fetch(`${API}/savings/remove?amount=${amount}`, { method: "POST" });
+                const data = await res.json();
+                if (!res.ok) {
+                    document.getElementById("removeSavingsMsg").textContent = data.message || "Error removing";
+                    return;
+                }
+                document.getElementById("removeSavingsMsg").textContent = "✅ Removed from savings!";
+                f.reset();
+                await refreshData();
+            } catch (err) {
+                console.error("Error remove:", err);
+            }
+        }
+
+        async function loadSummary() {
+            try {
+                const res = await fetch(`${API}/monthlysummary`);
+                const data = await res.json();
+
+                const labels = data.map(r => `${r.year}-${String(r.month).padStart(2, "0")}`);
+                const income = data.map(r => r.totalIncome);
+                const expenses = data.map(r => r.totalExpenses);
+
+                if (window.summaryChart && typeof window.summaryChart.destroy === "function") {
+                    window.summaryChart.destroy();
+                }
+                window.summaryChart = new Chart(document.getElementById("summaryChart"), {
+                    type: "line",
+                    data: {
+                        labels,
+                        datasets: [
+                            { label: "Income", data: income, borderColor: "green", fill: false },
+                            { label: "Expenses", data: expenses, borderColor: "red", fill: false }
+                        ]
+                    }
+                });
+
+                const res2 = await fetch(`${API}/expenses`);
+                const allExpenses = await res2.json();
+                const groups = {};
+                allExpenses.forEach(e => {
+                    groups[e.category] = (groups[e.category] || 0) + e.amount;
+                });
+                if (window.expensesChart && typeof window.expensesChart.destroy === "function") {
+                    window.expensesChart.destroy();
+                }
+                window.expensesChart = new Chart(document.getElementById("expensesChart"), {
+                    type: "doughnut",
+                    data: {
+                        labels: Object.keys(groups),
+                        datasets: [{
+                            data: Object.values(groups),
+                            backgroundColor: ["#f87171", "#60a5fa", "#34d399", "#fbbf24", "#a78bfa", "#f472b6"]
+                        }]
+                    }
+                });
+            } catch (err) {
+                console.error("Error summary:", err);
+            }
+        }
+
+        async function loadExpensesTable() {
+            try {
+                const res = await fetch(`${API}/expenses`);
+                let data = await res.json();
+                data.sort((a, b) => new Date(b.at) - new Date(a.at));
+
+                const filter = document.getElementById("categoryFilter").value;
+                if (filter) {
+                    data = data.filter(e => e.category === filter);
+                }
+
+                const tbody = document.getElementById("expensesTableBody");
+                tbody.innerHTML = "";
+
+                data.forEach(e => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+            <td class="px-4 py-2 border">${new Date(e.at).toLocaleDateString()}</td>
+            <td class="px-4 py-2 border">${e.type}</td>
+            <td class="px-4 py-2 border">${e.who}</td>
+            <td class="px-4 py-2 border">${e.category}</td>
+            <td class="px-4 py-2 border text-rose-600 font-semibold">
+              ${new Intl.NumberFormat(undefined, { style: "currency", currency: "MAD" }).format(e.amount)}
+            </td>
+          `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error("Error loading expenses table:", err);
+            }
+        }
+    </script>
 </body>
+
 </html>
