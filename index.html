@@ -2,23 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>My Money Tracker</title>
+  <title>💸 My Money Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <!-- Tailwind (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Supabase JS -->
-  <script defer src="https://unpkg.com/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-900">
-  <div class="max-w-4xl mx-auto p-6">
+  <div class="max-w-5xl mx-auto p-4 sm:p-6">
+    <!-- Header -->
     <header class="mb-6">
       <h1 class="text-3xl font-bold">💸 My Money Tracker</h1>
-      <p class="text-sm text-gray-600">Track income, expenses, live savings, and monthly trends.</p>
+      <p class="text-sm text-gray-600">Track income, expenses, live savings, history, and forecasts.</p>
     </header>
 
-    <!-- Savings Card -->
+    <!-- Savings -->
     <section class="mb-6">
-      <div class="rounded-2xl shadow bg-white p-5 flex items-center justify-between">
+      <div class="rounded-2xl shadow bg-white p-5 flex items-center justify-between flex-wrap gap-3">
         <div>
           <div class="text-sm text-gray-500">Current Savings</div>
           <div id="balance" class="text-3xl font-semibold">—</div>
@@ -54,7 +56,15 @@
         <h2 class="text-xl font-semibold">Add Expense</h2>
         <div>
           <label class="block text-sm mb-1">Type</label>
-          <input name="type" class="w-full border rounded-lg px-3 py-2" placeholder="Food, Rent, Travel..." />
+          <select name="type" class="w-full border rounded-lg px-3 py-2">
+            <option>Coffee</option>
+            <option>Transportation</option>
+            <option>Food</option>
+            <option>Cigarettes</option>
+            <option>Going Out</option>
+            <option>Parent</option>
+            <option>Others</option>
+          </select>
         </div>
         <div>
           <label class="block text-sm mb-1">Who</label>
@@ -65,6 +75,7 @@
           <select name="category" class="w-full border rounded-lg px-3 py-2">
             <option>Essential</option>
             <option>Luxury</option>
+            <option>Loans</option>
           </select>
         </div>
         <div>
@@ -81,7 +92,7 @@
     </div>
 
     <!-- Monthly Summary -->
-    <section class="rounded-2xl shadow bg-white p-5">
+    <section class="rounded-2xl shadow bg-white p-5 mb-6">
       <div class="flex items-center justify-between mb-4">
         <h2 class="text-xl font-semibold">Monthly Summary</h2>
         <button id="loadSummary" class="px-3 py-2 rounded-lg border">Reload</button>
@@ -100,40 +111,77 @@
         </table>
       </div>
     </section>
+
+    <!-- Expense History -->
+    <section class="rounded-2xl shadow bg-white p-5 mb-6">
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <h2 class="text-xl font-semibold">Expense History</h2>
+        <div class="flex gap-2 flex-wrap">
+          <input id="fromDate" type="date" class="border rounded-lg px-2 py-1" />
+          <input id="toDate" type="date" class="border rounded-lg px-2 py-1" />
+          <select id="categoryFilter" class="border rounded-lg px-2 py-1">
+            <option value="">All</option>
+            <option>Essential</option>
+            <option>Luxury</option>
+            <option>Loans</option>
+          </select>
+          <button id="loadExpenses" class="px-3 py-2 rounded-lg border">Filter</button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full text-sm">
+          <thead>
+            <tr class="text-left border-b">
+              <th class="py-2 pr-4">Date</th>
+              <th class="py-2 pr-4">Type</th>
+              <th class="py-2 pr-4">Category</th>
+              <th class="py-2 pr-4">Who</th>
+              <th class="py-2 pr-4">Amount</th>
+            </tr>
+          </thead>
+          <tbody id="expensesBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Charts -->
+    <section class="rounded-2xl shadow bg-white p-5 mb-10">
+      <h2 class="text-xl font-semibold mb-4">Charts & Forecast</h2>
+      <canvas id="summaryChart" class="mb-6"></canvas>
+      <canvas id="forecastChart"></canvas>
+    </section>
   </div>
 
   <script>
-  // ✅ Use your Azure backend URL
   const API_URL = "https://buget-manager.azurewebsites.net/api";
 
   document.addEventListener("DOMContentLoaded", async () => {
     await refreshSavings();
     await loadSummary();
+    await loadExpenses();
+    await renderCharts();
 
     document.getElementById("refreshBtn").addEventListener("click", refreshSavings);
     document.getElementById("loadSummary").addEventListener("click", loadSummary);
+    document.getElementById("loadExpenses").addEventListener("click", loadExpenses);
 
     document.getElementById("incomeForm").addEventListener("submit", handleAddIncome);
     document.getElementById("expenseForm").addEventListener("submit", handleAddExpense);
   });
 
-  // ---- Load savings ----
+  // ---- Savings ----
   async function refreshSavings() {
     try {
       const res = await fetch(`${API_URL}/savings`);
       const data = await res.json();
       document.getElementById("balance").textContent =
-        new Intl.NumberFormat(undefined, { style: "currency", currency: "MAD" }).format(
-          data.balance ?? 0
-        );
+        new Intl.NumberFormat(undefined, { style: "currency", currency: "MAD" }).format(data.balance ?? 0);
       document.getElementById("lastUpdate").textContent =
         "Updated: " + new Date(data.last_Update).toLocaleString();
-    } catch (err) {
-      console.error("Error loading savings", err);
-    }
+    } catch (err) { console.error("Error loading savings", err); }
   }
 
-  // ---- Add income ----
+  // ---- Add Income ----
   async function handleAddIncome(e) {
     e.preventDefault();
     const f = e.currentTarget;
@@ -142,22 +190,17 @@
       amount: parseFloat(f.amount.value),
       at: f.at.value || new Date().toISOString(),
     };
-
     try {
       await fetch(`${API_URL}/income`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       f.reset();
-      await refreshSavings();
-      await loadSummary();
-    } catch (err) {
-      console.error("Error adding income", err);
-    }
+      await refreshSavings(); await loadSummary(); await renderCharts();
+    } catch (err) { console.error("Error adding income", err); }
   }
 
-  // ---- Add expense ----
+  // ---- Add Expense ----
   async function handleAddExpense(e) {
     e.preventDefault();
     const f = e.currentTarget;
@@ -168,50 +211,108 @@
       amount: parseFloat(f.amount.value),
       at: f.at.value || new Date().toISOString(),
     };
-
     try {
       await fetch(`${API_URL}/expenses`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
       f.reset();
-      await refreshSavings();
-      await loadSummary();
-    } catch (err) {
-      console.error("Error adding expense", err);
-    }
+      await refreshSavings(); await loadSummary(); await loadExpenses(); await renderCharts();
+    } catch (err) { console.error("Error adding expense", err); }
   }
 
-  // ---- Load monthly summary ----
+  // ---- Monthly Summary ----
   async function loadSummary() {
     try {
       const res = await fetch(`${API_URL}/monthlysummary`);
       const data = await res.json();
       const tbody = document.getElementById("summaryBody");
       tbody.innerHTML = "";
-
       data.forEach((row) => {
         const tr = document.createElement("tr");
         tr.className = "border-b";
-        const cur = (v) =>
-          new Intl.NumberFormat(undefined, { style: "currency", currency: "MAD" }).format(v ?? 0);
-
+        const cur = (v) => new Intl.NumberFormat(undefined, { style: "currency", currency: "MAD" }).format(v ?? 0);
         tr.innerHTML = `
-          <td class="py-2 pr-4">${row.year}-${String(row.month).padStart(2, "0")}</td>
+          <td class="py-2 pr-4">${row.year}-${String(row.month).padStart(2,"0")}</td>
           <td class="py-2 pr-4">${cur(row.totalIncome)}</td>
           <td class="py-2 pr-4">${cur(row.totalExpenses)}</td>
-          <td class="py-2 pr-4 ${
-            (row.netChange ?? 0) >= 0 ? "text-emerald-700" : "text-rose-700"
-          }">${cur(row.netChange)}</td>
-        `;
+          <td class="py-2 pr-4 ${(row.netChange ?? 0) >= 0 ? "text-emerald-700" : "text-rose-700"}">
+            ${cur(row.netChange)}
+          </td>`;
         tbody.appendChild(tr);
       });
-    } catch (err) {
-      console.error("Error loading summary", err);
-    }
+    } catch (err) { console.error("Error loading summary", err); }
   }
-</script>
 
+  // ---- Expense History ----
+  async function loadExpenses() {
+    const from = document.getElementById("fromDate").value;
+    const to = document.getElementById("toDate").value;
+    const category = document.getElementById("categoryFilter").value;
+    const params = new URLSearchParams();
+    if (from) params.append("from", from);
+    if (to) params.append("to", to);
+    if (category) params.append("category", category);
+
+    try {
+      const res = await fetch(`${API_URL}/expenses?${params.toString()}`);
+      const data = await res.json();
+      const tbody = document.getElementById("expensesBody");
+      tbody.innerHTML = "";
+      data.forEach((e) => {
+        const tr = document.createElement("tr");
+        tr.className = "border-b";
+        tr.innerHTML = `
+          <td class="py-2 pr-4">${new Date(e.at).toLocaleDateString()}</td>
+          <td class="py-2 pr-4">${e.type}</td>
+          <td class="py-2 pr-4">${e.category}</td>
+          <td class="py-2 pr-4">${e.who}</td>
+          <td class="py-2 pr-4">${e.amount} MAD</td>`;
+        tbody.appendChild(tr);
+      });
+    } catch (err) { console.error("Error loading expenses", err); }
+  }
+
+  // ---- Charts ----
+  async function renderCharts() {
+    const res = await fetch(`${API_URL}/monthlysummary`);
+    const data = await res.json();
+    const labels = data.map(r => `${r.year}-${String(r.month).padStart(2,"0")}`);
+    const income = data.map(r => r.totalIncome);
+    const expenses = data.map(r => r.totalExpenses);
+    const net = data.map(r => r.netChange);
+
+    // Destroy old charts if re-rendering
+    if (window.summaryChart) window.summaryChart.destroy();
+    if (window.forecastChart) window.forecastChart.destroy();
+
+    // Summary Chart
+    window.summaryChart = new Chart(document.getElementById("summaryChart"), {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [
+          { label: "Income", data: income, backgroundColor: "green" },
+          { label: "Expenses", data: expenses, backgroundColor: "red" }
+        ]
+      }
+    });
+
+    // Forecast (simple)
+    const avgNet = net.reduce((a,b) => a+b,0)/net.length;
+    let forecast = [income.reduce((a,b)=>a+b,0) - expenses.reduce((a,b)=>a+b,0)];
+    for(let i=1;i<=6;i++){ forecast.push(forecast[i-1]+avgNet); }
+
+    window.forecastChart = new Chart(document.getElementById("forecastChart"), {
+      type: "line",
+      data: {
+        labels: ["Now","1M","2M","3M","4M","5M","6M"],
+        datasets: [
+          { label:"Forecast (Current Spending)", data:forecast, borderColor:"blue", fill:false }
+        ]
+      }
+    });
+  }
+  </script>
 </body>
 </html>
