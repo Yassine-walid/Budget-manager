@@ -274,44 +274,53 @@
   }
 
   // ---- Charts ----
-  async function renderCharts() {
-    const res = await fetch(`${API_URL}/monthlysummary`);
-    const data = await res.json();
-    const labels = data.map(r => `${r.year}-${String(r.month).padStart(2,"0")}`);
-    const income = data.map(r => r.totalIncome);
-    const expenses = data.map(r => r.totalExpenses);
-    const net = data.map(r => r.netChange);
+async function renderCharts() {
+  const res = await fetch(`${API_URL}/monthlysummary`);
+  const data = await res.json();
 
-    // Destroy old charts if re-rendering
-    if (window.summaryChart) window.summaryChart.destroy();
-    if (window.forecastChart) window.forecastChart.destroy();
+  const labels = data.map(r => `${r.year}-${String(r.month).padStart(2,"0")}`);
+  const income = data.map(r => r.totalIncome);
+  const expenses = data.map(r => r.totalExpenses);
+  const net = data.map(r => r.netChange);
 
-    // Summary Chart
-    window.summaryChart = new Chart(document.getElementById("summaryChart"), {
-      type: "bar",
-      data: {
-        labels,
-        datasets: [
-          { label: "Income", data: income, backgroundColor: "green" },
-          { label: "Expenses", data: expenses, backgroundColor: "red" }
-        ]
-      }
-    });
+  // ✅ Destroy old charts safely
+  if (window.summaryChart && typeof window.summaryChart.destroy === "function") {
+    window.summaryChart.destroy();
+  }
+  if (window.forecastChart && typeof window.forecastChart.destroy === "function") {
+    window.forecastChart.destroy();
+  }
 
-    // Forecast (simple)
-    const avgNet = net.reduce((a,b) => a+b,0)/net.length;
-    let forecast = [income.reduce((a,b)=>a+b,0) - expenses.reduce((a,b)=>a+b,0)];
-    for(let i=1;i<=6;i++){ forecast.push(forecast[i-1]+avgNet); }
+  // Summary Chart
+  window.summaryChart = new Chart(document.getElementById("summaryChart"), {
+    type: "bar",
+    data: {
+      labels,
+      datasets: [
+        { label: "Income", data: income, backgroundColor: "green" },
+        { label: "Expenses", data: expenses, backgroundColor: "red" }
+      ]
+    }
+  });
 
-    window.forecastChart = new Chart(document.getElementById("forecastChart"), {
-      type: "line",
-      data: {
-        labels: ["Now","1M","2M","3M","4M","5M","6M"],
-        datasets: [
-          { label:"Forecast (Current Spending)", data:forecast, borderColor:"blue", fill:false }
-        ]
-      }
-    });
+  // Forecast (simple)
+  const avgNet = net.reduce((a, b) => a + b, 0) / (net.length || 1);
+  let forecast = [income.reduce((a, b) => a + b, 0) - expenses.reduce((a, b) => a + b, 0)];
+  for (let i = 1; i <= 6; i++) {
+    forecast.push(forecast[i - 1] + avgNet);
+  }
+
+  window.forecastChart = new Chart(document.getElementById("forecastChart"), {
+    type: "line",
+    data: {
+      labels: ["Now", "1M", "2M", "3M", "4M", "5M", "6M"],
+      datasets: [
+        { label: "Forecast (Current Spending)", data: forecast, borderColor: "blue", fill: false }
+      ]
+    }
+  });
+}
+
   }
   </script>
 </body>
