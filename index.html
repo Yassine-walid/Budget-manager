@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <title>💸 My Money Tracker</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <!-- Tailwind (CDN) -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -17,34 +17,28 @@
         <!-- Header -->
         <header class="text-center">
             <h1 class="text-3xl font-bold">💸 My Money Tracker</h1>
-            <p class="text-gray-600 text-sm">Track savings, income, expenses & analytics</p>
+            <p class="text-gray-600 text-sm">Track savings, income, expenses, loans & analytics</p>
         </header>
 
-        <!-- Savings + Balance + Categories -->
+        <!-- Balance & Savings -->
         <section class="bg-white shadow rounded-xl p-5 space-y-6">
-            <!-- Balance & Savings cards inline -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Current Balance -->
                 <div class="bg-gray-50 rounded-lg p-4 shadow text-center">
                     <div class="text-sm text-gray-500">Current Balance</div>
                     <div id="balance" class="text-2xl font-bold">—</div>
                     <div id="lastUpdate" class="text-xs text-gray-500"></div>
                 </div>
-
-                <!-- Total Savings -->
                 <div class="bg-gray-50 rounded-lg p-4 shadow text-center">
                     <div class="text-sm text-gray-500">Total Savings</div>
                     <div id="totalSavings" class="text-2xl font-bold text-emerald-600">—</div>
                 </div>
             </div>
 
-            <!-- Total Expenses by Category -->
             <div>
                 <h3 class="text-sm text-gray-500 mb-2">Expenses by Category</h3>
                 <div id="categoryTotals" class="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm"></div>
             </div>
 
-            <!-- Refresh button -->
             <div>
                 <button id="refreshBtn"
                     class="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700">
@@ -55,7 +49,7 @@
 
         <!-- Forms -->
         <div class="grid md:grid-cols-2 gap-6">
-            <!-- Add Income -->
+            <!-- Income -->
             <form id="incomeForm" class="bg-white p-5 rounded-xl shadow space-y-3">
                 <h2 class="text-xl font-semibold">Add Income</h2>
                 <input name="source" placeholder="Salary, Freelance..." class="w-full border rounded px-3 py-2" />
@@ -67,11 +61,9 @@
                 </button>
             </form>
 
-            <!-- Savings Actions -->
+            <!-- Savings -->
             <div class="bg-white p-5 rounded-xl shadow space-y-6">
                 <h2 class="text-xl font-semibold">Manage Savings</h2>
-
-                <!-- Add to Savings -->
                 <form id="addSavingsForm" class="space-y-3">
                     <input name="amount" type="number" step="0.01" placeholder="Amount to Add"
                         class="w-full border rounded px-3 py-2" required />
@@ -80,8 +72,6 @@
                     </button>
                     <div id="addSavingsMsg" class="text-sm text-gray-600"></div>
                 </form>
-
-                <!-- Remove from Savings -->
                 <form id="removeSavingsForm" class="space-y-3">
                     <input name="amount" type="number" step="0.01" placeholder="Amount to Remove"
                         class="w-full border rounded px-3 py-2" required />
@@ -92,10 +82,10 @@
                 </form>
             </div>
 
-            <!-- Add Expense -->
+            <!-- Expenses -->
             <form id="expenseForm" class="bg-white p-5 rounded-xl shadow space-y-3">
                 <h2 class="text-xl font-semibold">Add Expense</h2>
-                <input name="type" placeholder="Food, Rent, Coffee..." class="w-full border rounded px-3 py-2" />
+                <input name="type" placeholder="Food, Rent..." class="w-full border rounded px-3 py-2" />
                 <input name="who" placeholder="Self, Family..." class="w-full border rounded px-3 py-2" />
                 <select name="category" class="w-full border rounded px-3 py-2">
                     <option>Essential</option>
@@ -111,6 +101,35 @@
             </form>
         </div>
 
+        <!-- Loans -->
+        <section class="bg-white shadow rounded-xl p-5 space-y-6">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-semibold">Loans</h2>
+                <button id="refreshLoansBtn"
+                    class="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm">
+                    Refresh
+                </button>
+            </div>
+
+            <form id="loanForm" class="grid md:grid-cols-5 gap-3">
+                <input name="name" placeholder="Name" class="border rounded px-3 py-2" />
+                <input name="principal" type="number" step="0.01" placeholder="Principal"
+                    class="border rounded px-3 py-2" required />
+                <input name="monthlyPayment" type="number" step="0.01" placeholder="Monthly"
+                    class="border rounded px-3 py-2" required />
+                <input name="paymentDay" type="number" min="1" max="28" placeholder="Day"
+                    class="border rounded px-3 py-2" required />
+                <input name="startDate" type="date" class="border rounded px-3 py-2" />
+                <div class="md:col-span-5">
+                    <button class="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
+                        Create Loan
+                    </button>
+                </div>
+            </form>
+
+            <div id="loansList" class="space-y-3"></div>
+        </section>
+
         <!-- Charts -->
         <section class="bg-white p-5 rounded-xl shadow space-y-6">
             <h2 class="text-xl font-semibold">Analytics</h2>
@@ -123,7 +142,7 @@
             <div class="flex justify-between items-center">
                 <h2 class="text-xl font-semibold">Expenses History</h2>
                 <select id="categoryFilter" class="border rounded px-2 py-1 text-sm">
-                    <option value="">All Categories</option>
+                    <option value="">All</option>
                     <option value="Essential">Essential</option>
                     <option value="Luxury">Luxury</option>
                     <option value="Loans">Loans</option>
@@ -144,23 +163,50 @@
                 </table>
             </div>
         </section>
+    </div>
 
+    <!-- Schedule Modal -->
+    <div id="scheduleModal" class="fixed inset-0 hidden bg-black/40 z-40">
+        <div class="bg-white max-w-xl mx-auto mt-24 rounded-xl shadow p-5">
+            <div class="flex justify-between items-center mb-3">
+                <h3 id="scheduleTitle" class="text-lg font-semibold">Schedule</h3>
+                <button id="closeSchedule" class="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            <div class="overflow-x-auto max-h-[60vh]">
+                <table class="min-w-full text-sm text-left border">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-4 py-2 border">Due</th>
+                            <th class="px-4 py-2 border">Payment</th>
+                            <th class="px-4 py-2 border">Remaining</th>
+                        </tr>
+                    </thead>
+                    <tbody id="scheduleTableBody"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
         const API = "https://buget-manager.azurewebsites.net/api";
 
-        document.addEventListener("DOMContentLoaded", () => {
-            refreshData();
-            loadSummary();
-            loadExpensesTable();
+        const formatMAD = v => new Intl.NumberFormat(undefined, { style: "currency", currency: "MAD" }).format(v ?? 0);
+        const formatDate = d => d ? new Date(d).toLocaleDateString() : "—";
 
+        document.addEventListener("DOMContentLoaded", () => {
+            refreshData(); loadSummary(); loadExpensesTable(); loadLoans();
             document.getElementById("refreshBtn").addEventListener("click", refreshData);
             document.getElementById("incomeForm").addEventListener("submit", addIncome);
             document.getElementById("expenseForm").addEventListener("submit", addExpense);
             document.getElementById("addSavingsForm").addEventListener("submit", addToSavings);
             document.getElementById("removeSavingsForm").addEventListener("submit", removeFromSavings);
             document.getElementById("categoryFilter").addEventListener("change", loadExpensesTable);
+            document.getElementById("loanForm").addEventListener("submit", createLoan);
+            document.getElementById("refreshLoansBtn").addEventListener("click", loadLoans);
+            document.getElementById("closeSchedule").addEventListener("click", () => document.getElementById("scheduleModal").classList.add("hidden"));
+            document.getElementById("scheduleModal").addEventListener("click", e => {
+                if (e.target.id === "scheduleModal") document.getElementById("scheduleModal").classList.add("hidden");
+            });
         });
 
         async function refreshData() {
@@ -355,6 +401,46 @@
             } catch (err) {
                 console.error("Error loading expenses table:", err);
             }
+        }
+
+        // ---------- Loans ----------
+        async function loadLoans() {
+            const res = await fetch(`${API}/loans`); const loans = await res.json();
+            const list = document.getElementById("loansList"); list.innerHTML = "";
+            if (!loans.length) { list.innerHTML = "<div>No loans</div>"; return; }
+            loans.forEach(l => {
+                const div = document.createElement("div"); div.className = "border rounded p-4 bg-gray-50 space-y-2";
+                div.innerHTML = `
+          <div class="font-semibold">${l.name}</div>
+          <div>Remaining: <span class="text-rose-600 font-bold">${formatMAD(l.remaining)}</span></div>
+          <div>Monthly: ${formatMAD(l.monthlyPayment)}</div>
+          <div>Next Due: ${formatDate(l.nextDueDate)}</div>
+          <div>Est. End: ${formatDate(l.estimatedEndDate)}</div>
+          <button class="px-2 py-1 bg-emerald-600 text-white rounded" onclick="viewSchedule(${l.id},'${l.name}')">Schedule</button>
+          <form onsubmit="return payLoan(event,${l.id})" class="mt-2 flex gap-2">
+            <input name="amount" type="number" step="0.01" placeholder="Pay amount" class="border rounded px-2 py-1 text-sm"/>
+            <button class="px-2 py-1 bg-indigo-600 text-white rounded text-sm">Pay</button>
+          </form>`;
+                list.appendChild(div);
+            });
+        }
+        async function createLoan(e) {
+            e.preventDefault(); const f = e.currentTarget;
+            const payload = { name: f.name.value, principal: +f.principal.value, monthlyPayment: +f.monthlyPayment.value, paymentDay: +f.paymentDay.value, startDate: f.startDate.value || new Date().toISOString() };
+            const res = await fetch(`${API}/loans`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+            if (res.ok) { f.reset(); loadLoans(); } else { alert("Error creating loan"); }
+        }
+        async function viewSchedule(id, name) {
+            const res = await fetch(`${API}/loans/${id}/schedule`); const data = await res.json();
+            document.getElementById("scheduleTitle").textContent = `Schedule — ${name}`;
+            const tbody = document.getElementById("scheduleTableBody"); tbody.innerHTML = "";
+            (data.schedule || []).forEach(r => { tbody.innerHTML += `<tr><td class="px-2 py-1 border">${formatDate(r.dueDate)}</td><td class="px-2 py-1 border">${formatMAD(r.paymentAmount)}</td><td class="px-2 py-1 border">${formatMAD(r.remainingAfter)}</td></tr>`; });
+            document.getElementById("scheduleModal").classList.remove("hidden");
+        }
+        async function payLoan(e, id) {
+            e.preventDefault(); const f = e.currentTarget; const amt = +f.amount.value; if (amt <= 0) return false;
+            await fetch(`${API}/loans/${id}/pay`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amount: amt, paidAt: new Date().toISOString() }) });
+            f.reset(); loadLoans(); return false;
         }
     </script>
 </body>
